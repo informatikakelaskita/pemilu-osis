@@ -227,6 +227,7 @@
   .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   .btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+  .btn-small { width: auto; padding: 8px 14px; font-size: 0.85em; margin: 0; }
 
   /* Hasil */
   .hasil-item {
@@ -495,6 +496,61 @@
     font-style: italic;
   }
 
+  /* ===== DATA PEMILIH (TOTAL) ===== */
+  .pemilih-total-box {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: #f0f4ff;
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 6px;
+  }
+  .pemilih-total-num {
+    font-size: 2.6em;
+    font-weight: 800;
+    color: #667eea;
+    line-height: 1;
+  }
+  .pemilih-total-info { flex: 1; min-width: 150px; }
+  .pemilih-total-info .lbl { font-size: 0.9em; color: #555; font-weight: 600; }
+  .pemilih-total-info .sub { font-size: 0.8em; color: #888; margin-top: 4px; }
+
+  .pemilih-edit-row {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .pemilih-edit-row .input-group { flex: 1; min-width: 150px; margin: 0; }
+  .pemilih-edit-row .btn { width: auto; min-width: 140px; margin: 0; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .stat-grid .stat-box {
+    background: #fafbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat-grid .stat-box .num {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #667eea;
+  }
+  .stat-grid .stat-box .lbl {
+    font-size: 0.78em;
+    color: #777;
+    margin-top: 2px;
+  }
+
   @media (max-width: 640px) {
     .chart-row { flex-wrap: wrap; }
     .chart-row-label { flex: 1 1 100%; }
@@ -505,6 +561,7 @@
     h1 { font-size: 1.4em; }
     .container { padding: 20px; }
     .kandidat-grid { grid-template-columns: 1fr; }
+    .pemilih-total-num { font-size: 2em; }
   }
 </style>
 </head>
@@ -561,11 +618,11 @@ const KANDIDAT = [
     wakil: "ZASKIA FASHA",
     visi: "Menjadikan OSIS sebagai wadah bagi seluruh siswa untuk berkembang, berprestasi, disiplin, serta menciptakan lingkungan sekolah yang aktif, kreatif, dan nyaman",
     fotoKetua: "1._KETUA__DENNIS_PUTRA_PRATAMA.png",
-    fotoWakil: "1. ZASKIA PASHA.png"
+    fotoWakil: "ZASKIA FASHA.png"
   },
   {
     no: 2,
-    ketua: "CHALIZTA HASTA PRAYOGI",
+    ketua: "CHALIZTA HASTA PRAYOGA",
     wakil: "TRI ANISA RESTU",
     visi: "Menjadikan OSIS sebagai organisasi yang aktif, inovatif, inspiratif, dan peduli untuk menciptakan lingkungan sekolah yang aman, nyaman, dan berprestasi bagi seluruh siswa",
     fotoKetua: "2.KETUA_CHALIZTA_HASTA_PRAYOGA.png",
@@ -582,13 +639,14 @@ const KANDIDAT = [
 ];
 
 const DEFAULT_ADMIN_PASSWORD = "admin123"; // Password awal saat pertama kali digunakan
+const DEFAULT_TOTAL_PEMILIH = 200;          // Default jumlah total data pemilih
 
 /* ============================================================
-   LOGIKA APLIKASI (tidak perlu diubah)
+   LOGIKA APLIKASI
    ============================================================ */
 let selectedKandidat = null;
 let isAdmin = false;
-let adminMenuAktif = 'dashboard'; // dashboard | suara | grafik | password | reset
+let adminMenuAktif = 'dashboard'; // dashboard | pemilih | suara | grafik | password | reset
 
 const Storage = {
   get(key) {
@@ -606,6 +664,15 @@ function initData() {
   }
   if (!Storage.get('sudahVoting')) Storage.set('sudahVoting', {});
   if (!Storage.get('adminPassword')) Storage.set('adminPassword', DEFAULT_ADMIN_PASSWORD);
+  // Total data pemilih (mis. 200 orang)
+  if (Storage.get('totalPemilih') === null) {
+    Storage.set('totalPemilih', DEFAULT_TOTAL_PEMILIH);
+  }
+}
+
+function getTotalPemilih() {
+  const v = Storage.get('totalPemilih');
+  return (v === null || v === undefined) ? DEFAULT_TOTAL_PEMILIH : Number(v);
 }
 
 function showPage(page) {
@@ -704,12 +771,14 @@ function renderAdmin() {
   const suara = Storage.get('suara') || {};
   const jumlahVoter = Object.keys(sudahVoting).length;
   const totalSuara = KANDIDAT.reduce((total, k) => total + (Number(suara[k.no]) || 0), 0);
+  const totalPemilih = getTotalPemilih();
   const content = document.getElementById('admin-content');
 
   /* Menu admin */
   const menuHTML = `
     <div class="menu" style="margin-bottom:20px;">
       <button class="${adminMenuAktif==='dashboard'?'active':''}" onclick="gantiMenuAdmin('dashboard')">📋 Dashboard</button>
+      <button class="${adminMenuAktif==='pemilih'?'active':''}" onclick="gantiMenuAdmin('pemilih')">👥 Data Pemilih</button>
       <button class="${adminMenuAktif==='suara'?'active':''}" onclick="gantiMenuAdmin('suara')">📝 Data Suara</button>
       <button class="${adminMenuAktif==='grafik'?'active':''}" onclick="gantiMenuAdmin('grafik')">📊 Grafik Hasil</button>
       <button class="${adminMenuAktif==='password'?'active':''}" onclick="gantiMenuAdmin('password')">🔐 Password</button>
@@ -720,35 +789,80 @@ function renderAdmin() {
 
   /* ---------- 1. DASHBOARD ---------- */
   if (adminMenuAktif === 'dashboard') {
-    const persenPartisipasi = totalSuara > 0 ? ((totalSuara / Math.max(jumlahVoter,1)) * 100).toFixed(1) : '0.0';
     isi = `
       <div class="admin-section">
         <h3>📋 Dashboard Admin</h3>
         <div class="total-suara" style="margin-bottom:16px;">
-          👥 Jumlah pemilih tercatat: <strong>${jumlahVoter}</strong> orang<br>
+          👥 Total data pemilih: <strong>${totalPemilih}</strong> orang<br>
           📊 Total suara kandidat: <strong>${totalSuara}</strong>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
-          <div class="admin-kandidat" style="text-align:center;">
-            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${jumlahVoter}</div>
-            <div style="font-size:.8em;color:#777;">Total Pemilih</div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="num">${totalPemilih}</div>
+            <div class="lbl">Total Data Pemilih</div>
           </div>
-          <div class="admin-kandidat" style="text-align:center;">
-            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${totalSuara}</div>
-            <div style="font-size:.8em;color:#777;">Total Suara</div>
+          <div class="stat-box">
+            <div class="num">${totalSuara}</div>
+            <div class="lbl">Total Suara Masuk</div>
           </div>
-          <div class="admin-kandidat" style="text-align:center;">
-            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${KANDIDAT.length}</div>
-            <div style="font-size:.8em;color:#777;">Kandidat</div>
+          <div class="stat-box">
+            <div class="num">${KANDIDAT.length}</div>
+            <div class="lbl">Kandidat</div>
           </div>
         </div>
         <div class="admin-note" style="margin-top:16px;">
-          Gunakan menu di atas untuk melihat data suara, grafik hasil, mengubah password, atau mereset data pemilihan.
+          Gunakan menu di atas untuk mengatur total data pemilih, melihat data suara, grafik hasil, mengubah password, atau mereset data pemilihan.
         </div>
       </div>`;
   }
 
-  /* ---------- 2. DATA SUARA KANDIDAT ---------- */
+  /* ---------- 2. DATA PEMILIH (TOTAL SAJA) ---------- */
+  if (adminMenuAktif === 'pemilih') {
+    const partisipasi = totalPemilih > 0 ? (totalSuara / totalPemilih * 100) : 0;
+    isi = `
+      <div class="admin-section">
+        <h3>👥 Data Pemilih</h3>
+        <p style="color:#666;font-size:.88em;margin-bottom:14px;">
+          Menu ini hanya mencatat <strong>jumlah total data pemilih</strong> (misal 200 orang).
+          Tidak menyimpan daftar NIS satu per satu. Data ini digunakan sebagai acuan jumlah pemilih terdaftar.
+        </p>
+
+        <div class="pemilih-total-box">
+          <div class="pemilih-total-num">${totalPemilih}</div>
+          <div class="pemilih-total-info">
+            <div class="lbl">Total Data Pemilih Terdaftar</div>
+            <div class="sub">Jumlah orang yang berhak memilih dalam pemilihan ini</div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-box">
+            <div class="num">${totalSuara}</div>
+            <div class="lbl">Suara Masuk</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${partisipasi.toFixed(1)}%</div>
+            <div class="lbl">Partisipasi</div>
+          </div>
+          <div class="stat-box">
+            <div class="num">${Math.max(0, totalPemilih - totalSuara)}</div>
+            <div class="lbl">Belum Memilih</div>
+          </div>
+        </div>
+
+        <div class="pemilih-edit-row">
+          <div class="input-group">
+            <label for="input-total-pemilih">Jumlah Total Data Pemilih</label>
+            <input type="number" id="input-total-pemilih" min="0" step="1" value="${totalPemilih}"
+                   onkeydown="if(event.key==='Enter') simpanTotalPemilih()">
+          </div>
+          <button class="btn" onclick="simpanTotalPemilih()">💾 Simpan Total Pemilih</button>
+        </div>
+        <div id="pemilih-alert"></div>
+      </div>`;
+  }
+
+  /* ---------- 3. DATA SUARA KANDIDAT ---------- */
   if (adminMenuAktif === 'suara') {
     let kandidatHTML = '';
     KANDIDAT.forEach(k => {
@@ -775,11 +889,14 @@ function renderAdmin() {
     isi = `
       <div class="admin-section">
         <h3>📝 Data Suara Kandidat</h3>
+        <p style="color:#666;font-size:.88em;margin-bottom:12px;">
+          Perubahan jumlah suara di sini akan langsung memperbarui grafik hasil pemilihan.
+        </p>
         ${kandidatHTML}
       </div>`;
   }
 
-  /* ---------- 3. GRAFIK HASIL PEMILIHAN (BAR CHART) ---------- */
+  /* ---------- 4. GRAFIK HASIL PEMILIHAN (BAR CHART) ---------- */
   if (adminMenuAktif === 'grafik') {
     const hasilUrut = KANDIDAT
       .map(k => ({ ...k, suara: Number(suara[k.no]) || 0 }))
@@ -793,7 +910,7 @@ function renderAdmin() {
       const maxSuara = Math.max(...hasilUrut.map(k => k.suara), 1);
       const barColors = ['gold', 'silver', 'bronze'];
 
-      chartHTML = `<div class="chart-total-badge">📊 Total Suara Masuk: ${totalSuara}</div>`;
+      chartHTML = `<div class="chart-total-badge">📊 Total Suara Masuk: ${totalSuara} (dari ${totalPemilih} pemilih terdaftar)</div>`;
 
       hasilUrut.forEach((k, i) => {
         const persen = totalSuara > 0 ? (k.suara / totalSuara * 100) : 0;
@@ -833,7 +950,7 @@ function renderAdmin() {
       </div>`;
   }
 
-  /* ---------- 4. PENGATURAN PASSWORD ---------- */
+  /* ---------- 5. PENGATURAN PASSWORD ---------- */
   if (adminMenuAktif === 'password') {
     isi = `
       <div class="admin-section">
@@ -857,7 +974,7 @@ function renderAdmin() {
       </div>`;
   }
 
-  /* ---------- 5. RESET DATA ---------- */
+  /* ---------- 6. RESET DATA ---------- */
   if (adminMenuAktif === 'reset') {
     isi = `
       <div class="admin-section">
@@ -892,6 +1009,7 @@ function gantiMenuAdmin(menu) {
   renderAdmin();
 }
 
+/* ---------- DATA SUARA ---------- */
 function simpanSuaraKandidat(no) {
   const input = document.getElementById(`edit-suara-${no}`);
   const nilai = Number(input.value);
@@ -904,10 +1022,29 @@ function simpanSuaraKandidat(no) {
   const suara = Storage.get('suara') || {};
   suara[no] = nilai;
   Storage.set('suara', suara);
+
+  // Grafik & total selalu dihitung ulang dari data suara yang tersimpan,
+  // sehingga otomatis sinkron.
   renderAdmin();
-  alert(`Jumlah suara kandidat nomor ${no} berhasil diperbarui.`);
+  alert(`Jumlah suara kandidat nomor ${no} berhasil diperbarui. Grafik hasil sudah disinkronkan.`);
 }
 
+/* ---------- DATA PEMILIH (TOTAL) ---------- */
+function simpanTotalPemilih() {
+  const input = document.getElementById('input-total-pemilih');
+  const nilai = Number(input.value);
+
+  if (!Number.isInteger(nilai) || nilai < 0) {
+    showAlert('❌ Jumlah total pemilih harus berupa bilangan bulat 0 atau lebih.', 'error', 'pemilih-alert');
+    return;
+  }
+
+  Storage.set('totalPemilih', nilai);
+  renderAdmin();
+  showAlert(`✅ Total data pemilih berhasil disimpan: ${nilai} orang.`, 'success', 'pemilih-alert');
+}
+
+/* ---------- PASSWORD & LOGIN ---------- */
 function ubahPasswordAdmin() {
   const passwordLama = document.getElementById('old-admin-pass').value;
   const passwordBaru = document.getElementById('new-admin-pass').value;
@@ -958,6 +1095,7 @@ function logoutAdmin() {
   document.getElementById('admin-login').style.display = 'block';
 }
 
+/* ---------- RESET ---------- */
 function resetSuara() {
   if (!confirm('⚠️ Yakin ingin menghapus SEMUA suara? Tindakan ini tidak bisa dibatalkan!')) return;
   const awal = {};
