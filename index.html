@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pemilihan Ketua & Wakil OSIS</title>
+<title>Pemilihan Ketua & Wakil OSIS - Sistem Voting</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
 
@@ -368,6 +368,139 @@
     line-height: 1.5;
   }
 
+  .admin-section {
+    margin: 18px 0;
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+  }
+  .admin-section h3 { color: #333; margin-bottom: 14px; }
+  .admin-kandidat {
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    margin: 12px 0;
+    background: #fafbff;
+  }
+  .admin-kandidat-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .admin-kandidat-name { font-weight: 700; color: #333; }
+  .admin-kandidat-count { color: #667eea; font-weight: 700; }
+  .admin-edit-row {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .admin-edit-row .input-group { flex: 1; min-width: 150px; margin: 0; }
+  .admin-edit-row .btn { width: auto; min-width: 125px; margin: 0; }
+  .admin-password-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .admin-password-grid .input-group { margin: 0; }
+  .admin-top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .admin-top-actions .btn { flex: 1; min-width: 150px; }
+
+  /* ===== GRAFIK BAR CHART (menu admin) ===== */
+  .chart-container {
+    padding: 10px 0 5px;
+  }
+  .chart-axis-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75em;
+    color: #999;
+    margin: 0 4px 6px;
+  }
+  .chart-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .chart-row-label {
+    flex: 0 0 150px;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #444;
+    line-height: 1.3;
+  }
+  .chart-row-label .no-badge {
+    display: inline-block;
+    background: #667eea;
+    color: #fff;
+    border-radius: 6px;
+    padding: 1px 7px;
+    font-size: 0.8em;
+    margin-right: 5px;
+  }
+  .chart-track {
+    flex: 1;
+    background: #eef1f9;
+    border-radius: 8px;
+    height: 34px;
+    overflow: hidden;
+    position: relative;
+  }
+  .chart-bar {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8em;
+    white-space: nowrap;
+    transition: width 0.8s ease;
+    min-width: 42px;
+  }
+  .chart-bar.gold { background: linear-gradient(90deg, #f39c12, #e67e22); }
+  .chart-bar.silver { background: linear-gradient(90deg, #95a5a6, #7f8c8d); }
+  .chart-bar.bronze { background: linear-gradient(90deg, #cd7f32, #a0522d); }
+  .chart-meta {
+    flex: 0 0 110px;
+    text-align: right;
+    font-size: 0.82em;
+    color: #555;
+    font-weight: 600;
+  }
+  .chart-meta small { display: block; color: #999; font-weight: 500; }
+  .chart-total-badge {
+    text-align: center;
+    background: #f0f4ff;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 18px;
+    font-weight: 700;
+    color: #444;
+    font-size: 0.95em;
+  }
+  .chart-empty {
+    text-align: center;
+    color: #999;
+    padding: 25px 10px;
+    font-style: italic;
+  }
+
+  @media (max-width: 640px) {
+    .chart-row { flex-wrap: wrap; }
+    .chart-row-label { flex: 1 1 100%; }
+    .chart-meta { flex: 1 1 auto; text-align: left; }
+  }
+
   @media (max-width: 500px) {
     h1 { font-size: 1.4em; }
     .container { padding: 20px; }
@@ -382,7 +515,6 @@
 
   <div class="menu">
     <button id="btn-voting" class="active" onclick="showPage('voting')">Voting</button>
-    <button id="btn-hasil" onclick="showPage('hasil')">Hasil</button>
     <button id="btn-admin" onclick="showPage('admin')">Admin</button>
   </div>
 
@@ -401,19 +533,16 @@
     <button class="btn" onclick="submitVote()">Kirim Suara</button>
   </div>
 
-  <!-- HALAMAN HASIL -->
-  <div id="page-hasil" class="page">
-    <div id="hasil-content"></div>
-  </div>
-
   <!-- HALAMAN ADMIN -->
   <div id="page-admin" class="page">
-    <div class="input-group">
-      <label for="admin-pass">Password Admin</label>
-      <input type="password" id="admin-pass" placeholder="Masukkan password">
+    <div id="admin-login">
+      <div class="input-group">
+        <label for="admin-pass">Password Admin</label>
+        <input type="password" id="admin-pass" placeholder="Masukkan password"
+               onkeydown="if(event.key==='Enter') loginAdmin()">
+      </div>
+      <button class="btn" onclick="loginAdmin()">Login Admin</button>
     </div>
-    <button class="btn" onclick="loginAdmin()">Login</button>
-
     <div id="admin-content" style="margin-top:20px;"></div>
   </div>
 </div>
@@ -452,13 +581,14 @@ const KANDIDAT = [
   }
 ];
 
-const ADMIN_PASSWORD = "admin123"; // Ganti password sesuai keinginan
+const DEFAULT_ADMIN_PASSWORD = "admin123"; // Password awal saat pertama kali digunakan
 
 /* ============================================================
    LOGIKA APLIKASI (tidak perlu diubah)
    ============================================================ */
 let selectedKandidat = null;
 let isAdmin = false;
+let adminMenuAktif = 'dashboard'; // dashboard | suara | grafik | password | reset
 
 const Storage = {
   get(key) {
@@ -475,6 +605,7 @@ function initData() {
     Storage.set('suara', awal);
   }
   if (!Storage.get('sudahVoting')) Storage.set('sudahVoting', {});
+  if (!Storage.get('adminPassword')) Storage.set('adminPassword', DEFAULT_ADMIN_PASSWORD);
 }
 
 function showPage(page) {
@@ -484,8 +615,8 @@ function showPage(page) {
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('btn-' + page).classList.add('active');
 
-  if (page === 'hasil') renderHasil();
   if (page === 'voting') renderKandidat();
+  if (page === 'admin' && isAdmin) renderAdmin();
 }
 
 /* Cek keberadaan gambar, kalau error pakai placeholder */
@@ -565,104 +696,266 @@ function submitVote() {
   renderKandidat();
 }
 
-function renderHasil() {
-  const suara = Storage.get('suara') || {};
-  const total = Object.values(suara).reduce((a, b) => a + b, 0);
-  const content = document.getElementById('hasil-content');
+/* ---------- RENDER ADMIN: MENU + KONTEN ---------- */
+function renderAdmin() {
+  if (!isAdmin) return;
 
-  if (total === 0) {
-    content.innerHTML = '<div class="alert alert-info">⚠️ Belum ada suara yang masuk.</div>';
+  const sudahVoting = Storage.get('sudahVoting') || {};
+  const suara = Storage.get('suara') || {};
+  const jumlahVoter = Object.keys(sudahVoting).length;
+  const totalSuara = KANDIDAT.reduce((total, k) => total + (Number(suara[k.no]) || 0), 0);
+  const content = document.getElementById('admin-content');
+
+  /* Menu admin */
+  const menuHTML = `
+    <div class="menu" style="margin-bottom:20px;">
+      <button class="${adminMenuAktif==='dashboard'?'active':''}" onclick="gantiMenuAdmin('dashboard')">📋 Dashboard</button>
+      <button class="${adminMenuAktif==='suara'?'active':''}" onclick="gantiMenuAdmin('suara')">📝 Data Suara</button>
+      <button class="${adminMenuAktif==='grafik'?'active':''}" onclick="gantiMenuAdmin('grafik')">📊 Grafik Hasil</button>
+      <button class="${adminMenuAktif==='password'?'active':''}" onclick="gantiMenuAdmin('password')">🔐 Password</button>
+      <button class="${adminMenuAktif==='reset'?'active':''}" onclick="gantiMenuAdmin('reset')">🗑️ Reset</button>
+    </div>`;
+
+  let isi = '';
+
+  /* ---------- 1. DASHBOARD ---------- */
+  if (adminMenuAktif === 'dashboard') {
+    const persenPartisipasi = totalSuara > 0 ? ((totalSuara / Math.max(jumlahVoter,1)) * 100).toFixed(1) : '0.0';
+    isi = `
+      <div class="admin-section">
+        <h3>📋 Dashboard Admin</h3>
+        <div class="total-suara" style="margin-bottom:16px;">
+          👥 Jumlah pemilih tercatat: <strong>${jumlahVoter}</strong> orang<br>
+          📊 Total suara kandidat: <strong>${totalSuara}</strong>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+          <div class="admin-kandidat" style="text-align:center;">
+            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${jumlahVoter}</div>
+            <div style="font-size:.8em;color:#777;">Total Pemilih</div>
+          </div>
+          <div class="admin-kandidat" style="text-align:center;">
+            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${totalSuara}</div>
+            <div style="font-size:.8em;color:#777;">Total Suara</div>
+          </div>
+          <div class="admin-kandidat" style="text-align:center;">
+            <div style="font-size:1.6em;font-weight:700;color:#667eea;">${KANDIDAT.length}</div>
+            <div style="font-size:.8em;color:#777;">Kandidat</div>
+          </div>
+        </div>
+        <div class="admin-note" style="margin-top:16px;">
+          Gunakan menu di atas untuk melihat data suara, grafik hasil, mengubah password, atau mereset data pemilihan.
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 2. DATA SUARA KANDIDAT ---------- */
+  if (adminMenuAktif === 'suara') {
+    let kandidatHTML = '';
+    KANDIDAT.forEach(k => {
+      const jumlah = Math.max(0, Number(suara[k.no]) || 0);
+      const persen = totalSuara > 0 ? (jumlah / totalSuara * 100) : 0;
+      kandidatHTML += `
+        <div class="admin-kandidat">
+          <div class="admin-kandidat-head">
+            <span class="admin-kandidat-name">No. ${k.no} — ${k.ketua} & ${k.wakil}</span>
+            <span class="admin-kandidat-count">${jumlah} suara</span>
+          </div>
+          <div class="bar-container">
+            <div class="bar" style="width:${persen}%">${persen >= 10 ? persen.toFixed(1) + '%' : ''}</div>
+          </div>
+          <div class="admin-edit-row">
+            <div class="input-group">
+              <label for="edit-suara-${k.no}">Edit jumlah suara kandidat ${k.no}</label>
+              <input type="number" id="edit-suara-${k.no}" min="0" step="1" value="${jumlah}">
+            </div>
+            <button class="btn" onclick="simpanSuaraKandidat(${k.no})">Simpan Suara</button>
+          </div>
+        </div>`;
+    });
+    isi = `
+      <div class="admin-section">
+        <h3>📝 Data Suara Kandidat</h3>
+        ${kandidatHTML}
+      </div>`;
+  }
+
+  /* ---------- 3. GRAFIK HASIL PEMILIHAN (BAR CHART) ---------- */
+  if (adminMenuAktif === 'grafik') {
+    const hasilUrut = KANDIDAT
+      .map(k => ({ ...k, suara: Number(suara[k.no]) || 0 }))
+      .sort((a, b) => b.suara - a.suara);
+
+    let chartHTML = '';
+
+    if (totalSuara === 0) {
+      chartHTML = `<div class="chart-empty">📭 Belum ada suara. Grafik akan muncul setelah ada suara masuk.</div>`;
+    } else {
+      const maxSuara = Math.max(...hasilUrut.map(k => k.suara), 1);
+      const barColors = ['gold', 'silver', 'bronze'];
+
+      chartHTML = `<div class="chart-total-badge">📊 Total Suara Masuk: ${totalSuara}</div>`;
+
+      hasilUrut.forEach((k, i) => {
+        const persen = totalSuara > 0 ? (k.suara / totalSuara * 100) : 0;
+        const lebar = maxSuara > 0 ? (k.suara / maxSuara * 100) : 0;
+        const colorClass = i < 3 ? barColors[i] : '';
+        const medali = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+
+        chartHTML += `
+          <div class="chart-row">
+            <div class="chart-row-label">
+              <span class="no-badge">No. ${k.no}</span>${medali ? ' ' + medali : ''}<br>
+              <span style="font-weight:500;font-size:.92em;color:#666;">${k.ketua}</span>
+            </div>
+            <div class="chart-track">
+              <div class="chart-bar ${colorClass}" style="width:${Math.max(lebar, 3)}%">
+                ${k.suara} suara
+              </div>
+            </div>
+            <div class="chart-meta">
+              ${persen.toFixed(1)}%
+              <small>${k.suara} / ${totalSuara}</small>
+            </div>
+          </div>`;
+      });
+    }
+
+    isi = `
+      <div class="admin-section">
+        <h3>📊 Grafik Hasil Pemilihan</h3>
+        <p style="color:#666;font-size:.88em;margin-bottom:15px;">
+          Grafik batang menampilkan perolehan suara seluruh kandidat. Grafik otomatis diperbarui
+          setelah Anda mengubah jumlah suara pada menu <strong>Data Suara</strong>.
+        </p>
+        <div class="chart-container">
+          ${chartHTML}
+        </div>
+      </div>`;
+  }
+
+  /* ---------- 4. PENGATURAN PASSWORD ---------- */
+  if (adminMenuAktif === 'password') {
+    isi = `
+      <div class="admin-section">
+        <h3>🔐 Ubah Password Admin</h3>
+        <div class="admin-password-grid">
+          <div class="input-group">
+            <label for="old-admin-pass">Password saat ini</label>
+            <input type="password" id="old-admin-pass" autocomplete="current-password">
+          </div>
+          <div class="input-group">
+            <label for="new-admin-pass">Password baru</label>
+            <input type="password" id="new-admin-pass" autocomplete="new-password">
+          </div>
+          <div class="input-group">
+            <label for="confirm-admin-pass">Ulangi password baru</label>
+            <input type="password" id="confirm-admin-pass" autocomplete="new-password">
+          </div>
+        </div>
+        <button class="btn" onclick="ubahPasswordAdmin()">Simpan Password Baru</button>
+        <div id="password-alert"></div>
+      </div>`;
+  }
+
+  /* ---------- 5. RESET DATA ---------- */
+  if (adminMenuAktif === 'reset') {
+    isi = `
+      <div class="admin-section">
+        <h3>🗑️ Reset Data Pemilihan</h3>
+        <div class="alert alert-error" style="text-align:left;">
+          ⚠️ <strong>Perhatian!</strong> Tindakan ini akan menghapus seluruh data suara dan data pemilih
+          yang tercatat. Tindakan ini tidak dapat dibatalkan.
+        </div>
+        <button class="btn btn-danger" onclick="resetSuara()">🗑️ Reset Semua Suara</button>
+        <div class="admin-note" style="margin-top:16px;">
+          Setelah reset, jumlah suara semua kandidat kembali ke 0 dan daftar pemilih dikosongkan.
+        </div>
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="alert alert-success">✅ Login berhasil sebagai Admin</div>
+    ${menuHTML}
+    ${isi}
+    <div class="admin-top-actions" style="margin-top:20px;">
+      <button class="btn" onclick="logoutAdmin()">Keluar dari Admin</button>
+    </div>
+    <p class="admin-note">
+      Data suara dan password disimpan di localStorage browser ini.
+      Perubahan hanya berlaku pada browser/perangkat ini. Untuk sinkronisasi antarperangkat
+      dan keamanan pemilihan yang lebih kuat, aplikasi perlu menggunakan server/database.
+    </p>`;
+}
+
+function gantiMenuAdmin(menu) {
+  adminMenuAktif = menu;
+  renderAdmin();
+}
+
+function simpanSuaraKandidat(no) {
+  const input = document.getElementById(`edit-suara-${no}`);
+  const nilai = Number(input.value);
+
+  if (!Number.isInteger(nilai) || nilai < 0) {
+    alert('Jumlah suara harus berupa bilangan bulat 0 atau lebih.');
     return;
   }
 
-  const hasilUrut = KANDIDAT
-    .map(k => ({ ...k, suara: suara[k.no] || 0 }))
-    .sort((a, b) => b.suara - a.suara);
+  const suara = Storage.get('suara') || {};
+  suara[no] = nilai;
+  Storage.set('suara', suara);
+  renderAdmin();
+  alert(`Jumlah suara kandidat nomor ${no} berhasil diperbarui.`);
+}
 
-  let html = `<div class="total-suara">📊 Total Suara Masuk: ${total}</div>`;
+function ubahPasswordAdmin() {
+  const passwordLama = document.getElementById('old-admin-pass').value;
+  const passwordBaru = document.getElementById('new-admin-pass').value;
+  const konfirmasi = document.getElementById('confirm-admin-pass').value;
+  const passwordTersimpan = Storage.get('adminPassword') || DEFAULT_ADMIN_PASSWORD;
+  const alertBox = document.getElementById('password-alert');
 
-  hasilUrut.forEach((k, i) => {
-    const persen = (k.suara / total * 100);
-    const medali = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
-    const fotoHTML = k.fotoKetua
-      ? `<img src="${k.fotoKetua}" class="hasil-foto"
-           onerror="this.outerHTML='<div class=\\'hasil-foto-placeholder\\'>👤</div>'">`
-      : `<div class="hasil-foto-placeholder">👤</div>`;
-
-    html += `
-      <div class="hasil-item">
-        <div class="hasil-header">
-          <div class="hasil-nama-wrap">
-            ${fotoHTML}
-            <span class="hasil-nama">
-              ${medali} No. ${k.no} - ${k.ketua} & ${k.wakil}
-            </span>
-          </div>
-          <span class="hasil-suara">${k.suara} suara (${persen.toFixed(1)}%)</span>
-        </div>
-        <div class="bar-container">
-          <div class="bar" style="width: ${persen}%">
-            ${persen >= 10 ? persen.toFixed(0) + '%' : ''}
-          </div>
-        </div>
-      </div>
-    `;
-  });
-
-  if (total > 0) {
-    const pemenang = hasilUrut[0];
-    const fotoPemenang = pemenang.fotoKetua
-      ? `<img src="${pemenang.fotoKetua}" class="foto-pemenang"
-           onerror="this.style.display='none'">`
-      : '';
-
-    html += `
-      <div class="pemenang">
-        <h2>🏆 PEMENANG</h2>
-        ${fotoPemenang}
-        <p><strong>No. ${pemenang.no}</strong></p>
-        <p>Ketua: <strong>${pemenang.ketua}</strong></p>
-        <p>Wakil: <strong>${pemenang.wakil}</strong></p>
-        <p style="margin-top:8px;">Dengan ${pemenang.suara} suara (${(pemenang.suara/total*100).toFixed(1)}%)</p>
-      </div>
-    `;
+  if (passwordLama !== passwordTersimpan) {
+    alertBox.innerHTML = '<div class="alert alert-error">Password saat ini tidak sesuai.</div>';
+    return;
+  }
+  if (passwordBaru.length < 6) {
+    alertBox.innerHTML = '<div class="alert alert-error">Password baru minimal 6 karakter.</div>';
+    return;
+  }
+  if (passwordBaru !== konfirmasi) {
+    alertBox.innerHTML = '<div class="alert alert-error">Konfirmasi password baru tidak sama.</div>';
+    return;
   }
 
-  content.innerHTML = html;
+  Storage.set('adminPassword', passwordBaru);
+  document.getElementById('old-admin-pass').value = '';
+  document.getElementById('new-admin-pass').value = '';
+  document.getElementById('confirm-admin-pass').value = '';
+  alertBox.innerHTML = '<div class="alert alert-success">Password admin berhasil diubah.</div>';
 }
 
 function loginAdmin() {
   const pass = document.getElementById('admin-pass').value;
-  if (pass === ADMIN_PASSWORD) {
+  const savedPassword = Storage.get('adminPassword') || DEFAULT_ADMIN_PASSWORD;
+
+  if (pass === savedPassword) {
     isAdmin = true;
+    adminMenuAktif = 'dashboard';
+    document.getElementById('admin-login').style.display = 'none';
     renderAdmin();
   } else {
     document.getElementById('admin-content').innerHTML =
-      '<div class="alert alert-error">❌ Password salah!</div>';
+      '<div class="alert alert-error">❌ Password salah! Silakan coba lagi.</div>';
   }
 }
 
-function renderAdmin() {
-  if (!isAdmin) return;
-  const sudahVoting = Storage.get('sudahVoting') || {};
-  const suara = Storage.get('suara') || {};
-  const jumlahVoter = Object.keys(sudahVoting).length;
-  const totalSuara = Object.values(suara).reduce((a, b) => a + b, 0);
-
-  document.getElementById('admin-content').innerHTML = `
-    <div class="alert alert-success">✅ Login berhasil sebagai Admin</div>
-    <div class="total-suara">
-      👥 Jumlah pemilih: ${jumlahVoter} orang<br>
-      📊 Total suara: ${totalSuara}
-    </div>
-    <div class="admin-actions">
-      <button class="btn btn-danger" onclick="resetSuara()">🗑️ Reset Semua Suara</button>
-    </div>
-    <p class="admin-note">
-      Catatan: Data disimpan di localStorage browser ini.
-      Untuk hasil yang tersinkron antar perangkat, diperlukan server/database.
-    </p>
-  `;
+function logoutAdmin() {
+  isAdmin = false;
+  adminMenuAktif = 'dashboard';
+  document.getElementById('admin-content').innerHTML = '';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('admin-login').style.display = 'block';
 }
 
 function resetSuara() {
@@ -672,7 +965,7 @@ function resetSuara() {
   Storage.set('suara', awal);
   Storage.set('sudahVoting', {});
   alert('✅ Data berhasil direset!');
-  renderAdmin();
+  if (isAdmin) renderAdmin();
 }
 
 // Inisialisasi
